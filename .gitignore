@@ -34,9 +34,9 @@
 
 # ROS
 **/build/**
-**/install/**
 **/log/**
 **/cmake/**
 *.bag
+# **/install/**
 # **/devel/**
 
