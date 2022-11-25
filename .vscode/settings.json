@@ -70,7 +70,8 @@
         "cinttypes": "cpp",
         "time.h": "c",
         "unistd.h": "c",
-        "comp_defines.h": "c"
+        "comp_defines.h": "c",
+        "math.h": "c"
     },
     // "ros.distro": "foxy",
     "cmake.sourceDirectory": "${workspaceFolder}/ros_foxy/src/cpp_pubsub"

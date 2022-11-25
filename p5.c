@@ -72,38 +72,37 @@ int main(int argc, char *argv[]){
         printf("ArgV: %s\n",*argv);
     }
 
-    signal(SIGTTIN, catch_sig_int);
+    // signal(SIGTTIN, catch_sig_int);
     
-    sem_init(&sem_1,0,0); sem_init(&sem_2,0,0); sem_init(&sem_2,0,1); 
-    if(&sem_1 == SEM_FAILED || &sem_2 == SEM_FAILED || &sem_3 == SEM_FAILED) perror("sem_open() error.");
+    // sem_init(&sem_1,0,0); sem_init(&sem_2,0,0); sem_init(&sem_2,0,1); 
+    // if(&sem_1 == SEM_FAILED || &sem_2 == SEM_FAILED || &sem_3 == SEM_FAILED) perror("sem_open() error.");
 
     pointCloud = (t_point_cloud*) malloc(sizeof(t_point_cloud));
 
-    
     pthread_t thr1, thr2, thr3;
 
-    printf("main_thread attr Changed:\n"); display_thread_attr(pthread_self(), "\t"); printf("\n");
+    // printf("main_thread attr Changed:\n"); display_thread_attr(pthread_self(), "\t"); printf("\n");
 
-    pthread_create(&thr1,NULL,read_thread, NULL);
-    pthread_create(&thr2,NULL,remove_outliers_thread, NULL);
-    pthread_create(&thr3,NULL,filter_roads_thread, NULL);
+    // pthread_create(&thr1,NULL,read_thread, NULL);
+    // pthread_create(&thr2,NULL,remove_outliers_thread, NULL);
+    // pthread_create(&thr3,NULL,filter_roads_thread, NULL);
 
-    pthread_join(thr1,NULL); pthread_join(thr2,NULL); pthread_join(thr3,NULL);
+    // pthread_join(thr1,NULL); pthread_join(thr2,NULL); pthread_join(thr3,NULL);
 
 
     // for(int i = 0; i < 3; i++){
 
-    //     read_point_cloud_sem(&pointCloud, "Data/point_cloud1.txt", &sem_3, &sem_1);
+    read_point_cloud(&pointCloud, "Data/point_cloud1.txt");
 
-    //     describe_point_cloud(pointCloud);
+    describe_point_cloud(pointCloud);
 
-    //     filter_point_cloud_sem(&pointCloud, &sem_1, &sem_2);
+    filter_point_cloud(&pointCloud);
 
-    //     describe_point_cloud(pointCloud);
+    describe_point_cloud(pointCloud);
 
-    //     filter_roads_sem(&pointCloud, &sem_2, &sem_3);
+    filter_roads(&pointCloud);
 
-    //     describe_point_cloud(pointCloud);
+    describe_point_cloud(pointCloud);
 
     // }
 

@@ -43,6 +43,8 @@ void free_t_point_cloud(t_point_cloud *ptr);
 
 void filter_point_cloud(t_point_cloud **ptr);
 
+void filter_roads(t_point_cloud **ptr);
+
 void clk_wait(double m_sec);
 
 void sub_timespec(struct timespec *tim_1,struct timespec *tim_2,struct timespec *result);

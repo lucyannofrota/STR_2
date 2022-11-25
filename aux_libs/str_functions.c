@@ -98,7 +98,7 @@ void free_t_point_cloud(t_point_cloud *ptr){
 }
 
 void filter_point_cloud(t_point_cloud **ptr){
-    const int n_rules = 3;
+    const int n_rules = 6;
     int i, count = 0;
     int *valid_pts = (int*) malloc(sizeof(int)*(*ptr)->npoints);
 
@@ -112,8 +112,17 @@ void filter_point_cloud(t_point_cloud **ptr){
         // (b) remove r <= 1.6 points
         if(sqrt(pow((*ptr)->x[i],2) + pow((*ptr)->y[i],2) + pow((*ptr)->z[i],2)) > 1.6) valid_pts[i]--;
 
-        // (c) remove z < 0 points
+        // (c) remove z > -0.3
         if((*ptr)->z[i] <= -0.3) valid_pts[i]--;
+
+        // remove x > 18*4/6 = 12
+        if((*ptr)->x[i] < 12) valid_pts[i]--;
+
+        // // y < -20 
+        if((*ptr)->y[i] > -15) valid_pts[i]--;
+
+        // // y > 20 
+        if((*ptr)->y[i] < 15) valid_pts[i]--;
 
 
         if(!valid_pts[i]) count++;
@@ -121,22 +130,16 @@ void filter_point_cloud(t_point_cloud **ptr){
 
     // redefining the point_cloud
     int aux_count = 0;
-    // double *aux_x, *aux_y, *aux_z;
     double *new_x = (double*) malloc(sizeof(double)*count); 
     double *new_y = (double*) malloc(sizeof(double)*count); 
     double *new_z = (double*) malloc(sizeof(double)*count); 
     
-    // printf("ptr: %p\n",new_x);
-    // printf("ptr: %p\n",new_y);
-    // printf("ptr: %p\n",new_z);
 
     for(i = 0; i < (*ptr)->npoints; i++){
         if(!valid_pts[i]){
             new_x[aux_count] = (*ptr)->x[i];
             new_y[aux_count] = (*ptr)->y[i];
             new_z[aux_count] = (*ptr)->z[i];
-            // printf("PT+: [%f,%f,%f]\n",new_x[aux_count],new_y[aux_count],new_z[aux_count]);
-            // printf("PT_: [%f,%f,%f]\n",(*ptr)->x[aux_count],(*ptr)->y[aux_count],(*ptr)->z[aux_count]);
             aux_count++;
         }
     }
@@ -148,17 +151,70 @@ void filter_point_cloud(t_point_cloud **ptr){
     (*ptr)->x = new_x; (*ptr)->y = new_y; (*ptr)->z = new_z;
 
 
-    // for(i = 0; i < (*ptr)->npoints; i++){
-    //   printf("PT+: [%f,%f,%f]\n",new_x[i],new_y[i],new_z[i]);
-    //   printf("PT_: [%f,%f,%f]\n",(*ptr)->x[i],(*ptr)->y[i],(*ptr)->z[i]);
-    // }
-
 
     #if __VERBOSE == 1
     printf("New Size: %i\n",count);
     #endif
 
     free(valid_pts);
+}
+
+void filter_roads(t_point_cloud **ptr){
+    const int n_bins = 16;
+    double *norm = (double*) malloc(sizeof(double)*(*ptr)->npoints);
+
+    int i;
+    double lims[2] = {DBL_MAX,DBL_MIN};
+    const int npoints = (*ptr)->npoints;
+    // const int npoints = 20;
+    for(i = 0; i < npoints; i++){
+        if((*ptr)->z[i] > lims[1]) lims[1] = (*ptr)->z[i];
+        if((*ptr)->z[i] < lims[0]) lims[0] = (*ptr)->z[i];
+    }
+
+    // for(i = 0; i < (*ptr)->npoints; i++){
+    // for(i = 0; i < npoints; i++){
+    //     norm[i] = ((*ptr)->z[i] - lims[0]) / (lims[1] - lims[0]) ;
+    //     printf("|%f4.3",norm[i]);
+    // }
+
+    printf("Min: %f, Max: %f\n",lims[0],lims[1]);
+    double gran = (lims[1]-lims[0])/n_bins;
+    // double gran = 1/16;
+    int *bins = NULL;
+    bins = (int*) malloc(sizeof(int)*n_bins);
+    for(i = 0; i < n_bins; i++) bins[i] = 0;
+
+    // for(i = 0; i < (*ptr)->npoints; i++){
+    int c_bin = 0;
+    for(i = 0; i < npoints; i++){
+        // printf("|%f4.3\t",norm[i]);
+
+        // c_bin = (int) floor( norm[i] / gran);
+        // bins[ (int) floor( norm[i] / gran) ]++;
+        // printf("Cur: %f\n",(*ptr)->z[i]);
+        // double v = (*ptr)->z[i] >= 0 ? (*ptr)->z[i]+lims[0] : (*ptr)->z[i]-lims[0];
+        // printf("V: %f\n",v);
+        // printf("Vgran: %f\n",v/gran);
+        // printf("FVgran: %f\n",floor(v/gran));
+        // printf("FVgranI: %i\n\n",(int)floor(v/gran));
+        // c_bin = (*ptr)->z[i] >= 0 ? (int) floor( (*ptr)->z[i]+lims[0] / gran) : (int) floor( (*ptr)->z[i]-lims[0] / gran);
+        // printf("Bin: %i\n",c_bin);
+        bins[ (int)floor( 
+            (
+                (*ptr)->z[i] >= 0 ?
+                    (*ptr)->z[i]+lims[0] : (*ptr)->z[i]-lims[0]
+            ) /gran)
+        ]++;
+    }
+
+
+    printf("Bins:\n");
+    for(i = 0; i < n_bins; i++){
+        printf("|%i",bins[i]);
+    }
+
+    // double bins[]
 }
 
 void clk_wait(double m_sec){
@@ -487,5 +543,6 @@ void filter_point_cloud_sem(t_point_cloud **ptr, sem_t *sem_b, sem_t *sem_a){
 void filter_roads_sem(t_point_cloud **ptr, sem_t *sem_b, sem_t *sem_a){
     sem_wait(sem_b);
     printf("Ptr: %p\n",*ptr);
+
     sem_post(sem_a);
 }
