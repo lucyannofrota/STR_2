@@ -30,3 +30,13 @@
 *.exe
 *.out
 *.app
+
+
+# ROS
+**/build/**
+**/install/**
+**/log/**
+**/cmake/**
+*.bag
+# **/devel/**
+

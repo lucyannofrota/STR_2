@@ -1,0 +1,14 @@
+Sistemas de Tempo Real
+
+Practical Assignment No2 "Mutual Exclusion, Process Synchronization, Measurement of Computation Times and ROS" (TP2)
+
+TP2 can be made in one of the following two options:
+
+Option 1:
+
+Make TP2 using ROS 1. This is the normal case. In this case, the typical suggested ROS installation is to install the ROS 1 Noetic distribution on the Ubuntu 20.04 LTS Linux distribution.
+
+Option 2:
+
+Make TP2 using ROS 2. This case is for students who prefer to work with ROS 2. In this case, the typical installation can be a recent ROS 2 distribution on an Ubuntu distribution (for example ROS 2 Humble distribution installed in Ubuntu 22.04 LTS Linux distribution). In this case, students should also make substitution versions of the TP2 PDF helping materials for working with ROS 2, instead of the already available PDF helping files available for ROS 1; this new PDF files should be made in coordination with the professor. The ROS Part III of the practical assignment statement may have to be adapted for the ROS 2 context.
+
