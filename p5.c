@@ -14,49 +14,56 @@ int cond_th[3] = {1,1,1};
 sem_t sem_1, sem_2, sem_3;
 t_point_cloud *pointCloud;
 
-static void *read_thread(void *arg){
+// static void *read_thread(void *arg){
 
-    // struct timespec (*tab)[N_FUNCTIONS][N_SAMPLES] = arg;
+//     arg = NULL;
 
-    printf("thread attr:\n"); display_thread_attr(pthread_self(), "\t"); printf("\n");
+//     // struct timespec (*tab)[N_FUNCTIONS][N_SAMPLES] = arg;
 
-    while(cond_th[0]){
-        printf("1");
-        clk_wait(5);
-    }
+//     printf("thread attr:\n"); display_thread_attr(pthread_self(), "\t"); printf("\n");
 
-    return NULL;
-}
+//     while(cond_th[0]){
+//         printf("1");
+//         clk_wait(5);
+//     }
 
-static void *remove_outliers_thread(void *arg){
+//     return NULL;
+// }
 
-    // struct timespec (*tab)[N_FUNCTIONS][N_SAMPLES] = arg;
+// static void *remove_outliers_thread(void *arg){
 
-    printf("thread attr:\n"); display_thread_attr(pthread_self(), "\t"); printf("\n");
+//     arg = NULL;
 
-    while(cond_th[1]){
-        printf("2");
-        clk_wait(5);
-    }
+//     // struct timespec (*tab)[N_FUNCTIONS][N_SAMPLES] = arg;
 
-    return NULL;
-}
+//     printf("thread attr:\n"); display_thread_attr(pthread_self(), "\t"); printf("\n");
 
-static void *filter_roads_thread(void *arg){
+//     while(cond_th[1]){
+//         printf("2");
+//         clk_wait(5);
+//     }
 
-    // struct timespec (*tab)[N_FUNCTIONS][N_SAMPLES] = arg;
+//     return NULL;
+// }
 
-    printf("thread attr:\n"); display_thread_attr(pthread_self(), "\t"); printf("\n");
+// static void *filter_roads_thread(void *arg){
 
-    while(cond_th[0]){
-        printf("3");
-        clk_wait(5);
-    }
+//     arg = NULL;
 
-    return NULL;
-}
+//     // struct timespec (*tab)[N_FUNCTIONS][N_SAMPLES] = arg;
+
+//     printf("thread attr:\n"); display_thread_attr(pthread_self(), "\t"); printf("\n");
+
+//     while(cond_th[0]){
+//         printf("3");
+//         clk_wait(5);
+//     }
+
+//     return NULL;
+// }
 
 void catch_sig_int(int val){
+    val += 0;
     for(int i = 0; i < 3; i++){
         cond_th[i] = 0;
     }
@@ -79,7 +86,7 @@ int main(int argc, char *argv[]){
 
     pointCloud = (t_point_cloud*) malloc(sizeof(t_point_cloud));
 
-    pthread_t thr1, thr2, thr3;
+    // pthread_t thr1, thr2, thr3;
 
     // printf("main_thread attr Changed:\n"); display_thread_attr(pthread_self(), "\t"); printf("\n");
 
@@ -100,7 +107,7 @@ int main(int argc, char *argv[]){
 
     describe_point_cloud(pointCloud);
 
-    filter_roads(&pointCloud);
+    filter_roads(&pointCloud,12);
 
     describe_point_cloud(pointCloud);
 
