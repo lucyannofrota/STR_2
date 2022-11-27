@@ -8,7 +8,6 @@
 
 #include "sensor_msgs/point_cloud2_iterator.hpp"
 
-
 #include <visualization_msgs/msg/marker.hpp>
 
 // #include "ros_foxy/src/cpp_pubsub/src/publisher_member_function.cpp"

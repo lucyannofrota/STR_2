@@ -120,7 +120,7 @@ void filter_point_cloud(t_point_cloud **ptr){
         // filter 110 deg in front of the car
         // This rule already removes X < 0 points
         double ang = atan2((*ptr)->y[i],(*ptr)->x[i])*180/M_PI;
-        if( abs(ang) <= 55 ) valid_pts[i]--;
+        if( fabs(ang) <= 55.0 ) valid_pts[i]--;
 
 
         if(!valid_pts[i]) count++;
@@ -296,6 +296,17 @@ void clk_wait(double m_sec){
     clock_nanosleep(CLOCK_REALTIME, TIMER_ABSTIME, &deadline, NULL);
 }
 
+void add_timespec(const struct timespec *tim_1,const struct timespec *tim_2,struct timespec *result){
+    // from <sys/time.h>
+    // define timeradd(a, b, result)
+    result->tv_sec = tim_1->tv_sec + tim_2->tv_sec;
+    result->tv_nsec = tim_1->tv_nsec + tim_2->tv_nsec;
+    if(result->tv_nsec >= 1e9){
+        result->tv_sec++;
+        result->tv_nsec -= 1e9;
+    }
+}
+
 void sub_timespec(struct timespec *tim_1,struct timespec *tim_2,struct timespec *result){
     result->tv_sec = tim_1->tv_sec - tim_2->tv_sec;
     result->tv_nsec = tim_1->tv_nsec - tim_2->tv_nsec;
@@ -303,6 +314,23 @@ void sub_timespec(struct timespec *tim_1,struct timespec *tim_2,struct timespec 
         result->tv_sec -= 1;
         result->tv_nsec += 1000000000;
     }
+}
+
+double dtime_ms(const struct timespec *tim_1,const struct timespec *tim_2){
+    // from <sys/time.h>
+    // # define timersub(a, b, result)
+    struct timespec result;
+    result.tv_sec = tim_1->tv_sec - tim_2->tv_sec;
+    result.tv_nsec = tim_1->tv_nsec - tim_2->tv_nsec;
+    if(result.tv_nsec < 0 && result.tv_sec > 0){
+        result.tv_sec --;
+        result.tv_nsec += 1e9;
+    }
+    return (result.tv_sec*1e9 + ((long int)result.tv_nsec))/1000000.0;
+}
+
+void print_timespec(struct timespec t,char *prefix){
+    printf("%s sec: %i\n%snsec: %ld\n",prefix,(int)t.tv_sec,prefix,t.tv_nsec);
 }
 
 void calc_func_ripple(struct timespec dtime_spec[N_FUNCTIONS][N_SAMPLES]){
@@ -541,11 +569,12 @@ void read_point_cloud_sem(t_point_cloud **ptr, char *file_name, sem_t *sem_b, se
 }
 
 void filter_point_cloud_sem(t_point_cloud **ptr, sem_t *sem_b, sem_t *sem_a){
-    const int n_rules = 3;
+    const int n_rules = 4;
     int i, count = 0;
+    sem_wait(sem_b);
     int *valid_pts = (int*) malloc(sizeof(int)*(*ptr)->npoints);
 
-    // looking for valid poiunts
+    // looking for valid points
     for(i = 0; i < (*ptr)->npoints; i++){
         valid_pts[i] = n_rules;
 
@@ -555,8 +584,13 @@ void filter_point_cloud_sem(t_point_cloud **ptr, sem_t *sem_b, sem_t *sem_a){
         // (b) remove r <= 1.6 points
         if(sqrt(pow((*ptr)->x[i],2) + pow((*ptr)->y[i],2) + pow((*ptr)->z[i],2)) > 1.6) valid_pts[i]--;
 
-        // (c) remove z < 0 points
+        // (c) remove z > -0.3
         if((*ptr)->z[i] <= -0.3) valid_pts[i]--;
+
+        // filter 110 deg in front of the car
+        // This rule already removes X < 0 points
+        double ang = atan2((*ptr)->y[i],(*ptr)->x[i])*180/M_PI;
+        if( fabs(ang) <= 55.0 ) valid_pts[i]--;
 
 
         if(!valid_pts[i]) count++;
@@ -564,39 +598,29 @@ void filter_point_cloud_sem(t_point_cloud **ptr, sem_t *sem_b, sem_t *sem_a){
 
     // redefining the point_cloud
     int aux_count = 0;
-    // double *aux_x, *aux_y, *aux_z;
     double *new_x = (double*) malloc(sizeof(double)*count); 
     double *new_y = (double*) malloc(sizeof(double)*count); 
     double *new_z = (double*) malloc(sizeof(double)*count); 
     
-    // printf("ptr: %p\n",new_x);
-    // printf("ptr: %p\n",new_y);
-    // printf("ptr: %p\n",new_z);
 
     for(i = 0; i < (*ptr)->npoints; i++){
         if(!valid_pts[i]){
             new_x[aux_count] = (*ptr)->x[i];
             new_y[aux_count] = (*ptr)->y[i];
             new_z[aux_count] = (*ptr)->z[i];
-            // printf("PT+: [%f,%f,%f]\n",new_x[aux_count],new_y[aux_count],new_z[aux_count]);
-            // printf("PT_: [%f,%f,%f]\n",(*ptr)->x[aux_count],(*ptr)->y[aux_count],(*ptr)->z[aux_count]);
             aux_count++;
         }
     }
     #if __VERBOSE == 1
     printf("Old Size: %i\n",aux_count);
     #endif
-    sem_wait(sem_b);
-    (*ptr)->npoints = aux_count;
+
     free((*ptr)->x); free((*ptr)->y); free((*ptr)->z);
     (*ptr)->x = new_x; (*ptr)->y = new_y; (*ptr)->z = new_z;
+    (*ptr)->npoints = aux_count;
+
     sem_post(sem_a);
 
-
-    // for(i = 0; i < (*ptr)->npoints; i++){
-    //   printf("PT+: [%f,%f,%f]\n",new_x[i],new_y[i],new_z[i]);
-    //   printf("PT_: [%f,%f,%f]\n",(*ptr)->x[i],(*ptr)->y[i],(*ptr)->z[i]);
-    // }
 
 
     #if __VERBOSE == 1
@@ -604,11 +628,129 @@ void filter_point_cloud_sem(t_point_cloud **ptr, sem_t *sem_b, sem_t *sem_a){
     #endif
 
     free(valid_pts);
+
+
+    // for(i = 0; i < (*ptr)->npoints; i++){
+    //   printf("PT+: [%f,%f,%f]\n",new_x[i],new_y[i],new_z[i]);
+    //   printf("PT_: [%f,%f,%f]\n",(*ptr)->x[i],(*ptr)->y[i],(*ptr)->z[i]);
+    // }
+
 }
 
-void filter_roads_sem(t_point_cloud **ptr, sem_t *sem_b, sem_t *sem_a){
-    sem_wait(sem_b);
-    printf("Ptr: %p\n",*ptr);
+void filter_roads_sem(t_point_cloud **ptr, const int n_bins, sem_t *sem_b, sem_t *sem_a){
 
+    int i;
+    double lims[2] = {DBL_MAX,DBL_MIN};
+    sem_wait(sem_b);
+    const int npoints = (*ptr)->npoints;
+    for(i = 0; i < npoints; i++){
+        if((*ptr)->z[i] > lims[1]) lims[1] = (*ptr)->z[i];
+        if((*ptr)->z[i] < lims[0]) lims[0] = (*ptr)->z[i];
+    }
+
+
+    double gran = (lims[1]-lims[0])/n_bins;
+    int *bins = NULL;
+    bins = (int*) malloc(sizeof(int)*n_bins);
+    for(i = 0; i < n_bins; i++) bins[i] = 0;
+
+    int c_bin = 0;
+    int *bin_numer = (int*) malloc(sizeof(int)*(*ptr)->npoints);
+    for(i = 0; i < npoints; i++){
+        c_bin = (int)floor( 
+            ( 
+                (*ptr)->z[i] >= 0 ?
+                (*ptr)->z[i]+lims[0] : (*ptr)->z[i]-lims[0] 
+            ) /gran
+        );
+        bins[ c_bin ]++;
+        bin_numer[i] = c_bin;
+    }
+
+
+    // printf("Bins:\n");
+    int max_bin = 0;
+    for(i = 0; i < n_bins; i++){
+        // printf("|%i",bins[i]);
+        if(bins[max_bin] < bins[i]) max_bin = i;
+    }
+
+
+    int selected_bins[3] = {-1,-1,-1};
+    // mask [c3,c2,c1,cm3,cm2,cm1]
+    u_int8_t mask = 0b010; //binary mask
+    // double lims_conds[2] = {lims[1]+selected_bins[1]*gran,lims[1]+(selected_bins[1]+1)*gran};
+    if(max_bin>0){
+        selected_bins[0] = max_bin-1;
+        mask |= 0b001;
+        // lims_conds[0] = lims[1]+selected_bins[0]*gran;
+    }
+    selected_bins[1] = max_bin;
+    if(max_bin+1<=n_bins){
+        selected_bins[2] = max_bin+1;
+        mask |= 0b100;
+    }
+
+
+    #if __VERBOSE == 1
+    printf("\nSelected bins: [%i,%i,%i]",selected_bins[0],selected_bins[1],selected_bins[2]);
+
+    printf("\nLims bins: [%f,%f], [%f,%f], [%f,%f]\n",
+        lims[1]+selected_bins[0]*gran,lims[1]+(selected_bins[0]+1)*gran,
+        lims[1]+selected_bins[1]*gran,lims[1]+(selected_bins[1]+1)*gran,
+        lims[1]+selected_bins[2]*gran,lims[1]+(selected_bins[2]+1)*gran
+    );
+
+    printf("\nMax bin %i\n",max_bin);
+    #endif
+
+    int count = 0; // Expected number of points within the center bins
+    count = (((0b001 & mask) == 0b001) ? bins[selected_bins[0]] : 0) +
+            (((0b010 & mask) == 0b010) ? bins[selected_bins[1]] : 0) +
+            (((0b100 & mask) == 0b100) ? bins[selected_bins[2]] : 0);
+    int aux_count = 0;
+    double *new_x = (double*) malloc(sizeof(double)*count); 
+    double *new_y = (double*) malloc(sizeof(double)*count); 
+    double *new_z = (double*) malloc(sizeof(double)*count); 
+    
+    // printf("Sum count: %i\n",count);
+    
+
+    for(i = 0; i < (*ptr)->npoints; i++){
+
+        for(int j = 0; j < 3; j++){
+            if(j == 0 && (mask & 0b001) == 0b000) continue;
+            if(j == 1 && (mask & 0b010) == 0b000) continue;
+            if(j == 2 && (mask & 0b100) == 0b000) continue;
+
+            if(selected_bins[j] == bin_numer[i]){
+                new_x[aux_count] = (*ptr)->x[i];
+                new_y[aux_count] = (*ptr)->y[i];
+                new_z[aux_count] = (*ptr)->z[i];
+                aux_count++;
+                break;
+            }
+        }
+    }
+
+    // printf("Count: %i, aux_count: %i\n",count,aux_count);
+
+    // printf("Old Size: %i\n",(*ptr)->npoints);
+    free((*ptr)->x); free((*ptr)->y); free((*ptr)->z);
+    (*ptr)->x = new_x; (*ptr)->y = new_y; (*ptr)->z = new_z;
+    (*ptr)->npoints = count;
+    // describe_point_cloud((*ptr));
     sem_post(sem_a);
+
+
+
+    // printf("New Size: %i\n",aux_count);
+
+    // free(valid_pts);
+
+    free(bins);
+    free(bin_numer);
+
+    // double bins[]
+
 }

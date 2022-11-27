@@ -47,7 +47,13 @@ void filter_roads(t_point_cloud **ptr, const int n_bins);
 
 void clk_wait(double m_sec);
 
+void add_timespec(const struct timespec *tim_1,const struct timespec *tim_2,struct timespec *result);
+
 void sub_timespec(struct timespec *tim_1,struct timespec *tim_2,struct timespec *result);
+
+double dtime_ms(const struct timespec *tim_1,const struct timespec *tim_2);
+
+void print_timespec(struct timespec t,char *prefix);
 
 void calc_func_ripple(struct timespec dtime_spec[N_FUNCTIONS][N_SAMPLES]);
 
@@ -68,7 +74,7 @@ void read_point_cloud_sem(t_point_cloud **out_ptr, char *file_name, sem_t *sem_b
 
 void filter_point_cloud_sem(t_point_cloud **ptr, sem_t *sem_b, sem_t *sem_a);
 
-void filter_roads_sem(t_point_cloud **ptr, sem_t *sem_b, sem_t *sem_a);
+void filter_roads_sem(t_point_cloud **ptr, const int n_bins, sem_t *sem_b, sem_t *sem_a);
 
 
 #endif //_STR_FUNCTIONS_H__

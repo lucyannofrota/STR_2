@@ -14,62 +14,112 @@ int cond_th[3] = {1,1,1};
 sem_t sem_1, sem_2, sem_3;
 t_point_cloud *pointCloud;
 
-// static void *read_thread(void *arg){
+#define THREAD_PERIOD 100
 
-//     arg = NULL;
+// #define I_TIME_S 3
 
-//     // struct timespec (*tab)[N_FUNCTIONS][N_SAMPLES] = arg;
+static void *read_thread(void *arg){
 
-//     printf("thread attr:\n"); display_thread_attr(pthread_self(), "\t"); printf("\n");
+    arg = NULL;
 
-//     while(cond_th[0]){
-//         printf("1");
-//         clk_wait(5);
-//     }
+    printf("thread attr:\n"); display_thread_attr(pthread_self(), "\t"); printf("\n");
 
-//     return NULL;
-// }
+    const struct timespec period = {0,THREAD_PERIOD*1e6};
+    struct timespec next_time,currrent_time;
 
-// static void *remove_outliers_thread(void *arg){
+    clock_gettime(CLOCK_REALTIME, &(next_time));
 
-//     arg = NULL;
+    while(cond_th[0]){
 
-//     // struct timespec (*tab)[N_FUNCTIONS][N_SAMPLES] = arg;
+        // printf("Th1: \n"); print_timespec(next_time,"\t");
 
-//     printf("thread attr:\n"); display_thread_attr(pthread_self(), "\t"); printf("\n");
+        clock_gettime(CLOCK_REALTIME, &(currrent_time));
+        
+        printf("Th1: %f\n",dtime_ms(&currrent_time,&next_time)*1000);// print_timespec(currrent_time,"\t");
+        // print_timespec(currrent_time,"\t");
 
-//     while(cond_th[1]){
-//         printf("2");
-//         clk_wait(5);
-//     }
+        add_timespec(&next_time,&period,&next_time);
 
-//     return NULL;
-// }
+        read_point_cloud_sem(&pointCloud, "Data/point_cloud1.txt",&sem_3,&sem_1);
+        // read_point_cloud(&pointCloud, "Data/point_cloud1.txt");
 
-// static void *filter_roads_thread(void *arg){
+        clock_nanosleep(CLOCK_REALTIME, TIMER_ABSTIME, &next_time, NULL);
+        
+        
+    }
 
-//     arg = NULL;
+    return NULL;
 
-//     // struct timespec (*tab)[N_FUNCTIONS][N_SAMPLES] = arg;
+}
 
-//     printf("thread attr:\n"); display_thread_attr(pthread_self(), "\t"); printf("\n");
+static void *remove_outliers_thread(void *arg){
 
-//     while(cond_th[0]){
-//         printf("3");
-//         clk_wait(5);
-//     }
+    arg = NULL;
 
-//     return NULL;
-// }
+    printf("thread attr:\n"); display_thread_attr(pthread_self(), "\t"); printf("\n");
+
+    const struct timespec period = {0,THREAD_PERIOD*1e6};
+    struct timespec next_time;
+
+    clock_gettime(CLOCK_REALTIME, &(next_time));
+
+    while(cond_th[1]){
+
+        add_timespec(&next_time,&period,&next_time);
+
+        // printf("Th2: \n"); print_timespec(next_time,"\t");
+
+        filter_point_cloud_sem(&pointCloud,&sem_1,&sem_2);
+
+        clock_nanosleep(CLOCK_REALTIME, TIMER_ABSTIME, &next_time, NULL);
+        
+    }
+
+    return NULL;
+    
+}
+
+static void *filter_roads_thread(void *arg){
+
+    arg = NULL;
+
+    printf("thread attr:\n"); display_thread_attr(pthread_self(), "\t"); printf("\n");
+
+    const struct timespec period = {0,THREAD_PERIOD*1e6};
+    struct timespec next_time, currrent_time;
+
+    clock_gettime(CLOCK_REALTIME, &(next_time));
+
+    while(cond_th[2]){
+
+        clock_gettime(CLOCK_REALTIME, &(currrent_time));
+        
+        // printf("Th3: %f\n",dtime_ms(&currrent_time,&next_time)*1000);// print_timespec(currrent_time,"\t");
+
+        add_timespec(&next_time,&period,&next_time);
+
+        filter_roads_sem(&pointCloud,12,&sem_2,&sem_3);
+
+        clock_nanosleep(CLOCK_REALTIME, TIMER_ABSTIME, &next_time, NULL);
+        
+    }
+
+    return NULL;
+    
+}
 
 void catch_sig_int(int val){
+
     val += 0;
     for(int i = 0; i < 3; i++){
         cond_th[i] = 0;
     }
 
     if(pointCloud != NULL) free_t_point_cloud(pointCloud);
+
     sem_close(&sem_1); sem_close(&sem_2); sem_close(&sem_3);
+
+    sem_destroy(&sem_1); sem_destroy(&sem_2); sem_destroy(&sem_3);
 
     exit(0);
 }
@@ -81,35 +131,40 @@ int main(int argc, char *argv[]){
 
     // signal(SIGTTIN, catch_sig_int);
     
-    // sem_init(&sem_1,0,0); sem_init(&sem_2,0,0); sem_init(&sem_2,0,1); 
-    // if(&sem_1 == SEM_FAILED || &sem_2 == SEM_FAILED || &sem_3 == SEM_FAILED) perror("sem_open() error.");
+    sem_init(&sem_1,0,0); sem_init(&sem_2,0,0); sem_init(&sem_3,0,1);
+    if(&sem_1 == SEM_FAILED || &sem_2 == SEM_FAILED || &sem_3 == SEM_FAILED) perror("sem_init() error.");
 
     pointCloud = (t_point_cloud*) malloc(sizeof(t_point_cloud));
 
-    // pthread_t thr1, thr2, thr3;
+    pthread_t thr1, thr2, thr3;
 
-    // printf("main_thread attr Changed:\n"); display_thread_attr(pthread_self(), "\t"); printf("\n");
+    pthread_attr_t attr;
 
-    // pthread_create(&thr1,NULL,read_thread, NULL);
-    // pthread_create(&thr2,NULL,remove_outliers_thread, NULL);
-    // pthread_create(&thr3,NULL,filter_roads_thread, NULL);
+    thread_configs(&attr,12,SCHED_FIFO,0);
 
-    // pthread_join(thr1,NULL); pthread_join(thr2,NULL); pthread_join(thr3,NULL);
+    printf("main_thread attr Changed:\n"); display_thread_attr(pthread_self(), "\t"); printf("\n");
 
+    pthread_create(&thr1,&attr,read_thread, NULL);
+    pthread_create(&thr2,&attr,remove_outliers_thread, NULL);
+    pthread_create(&thr3,&attr,filter_roads_thread, NULL);
 
-    // for(int i = 0; i < 3; i++){
+    pthread_join(thr1,NULL); pthread_join(thr2,NULL); pthread_join(thr3,NULL);
 
-    read_point_cloud(&pointCloud, "Data/point_cloud1.txt");
+    pthread_attr_destroy(&attr);
 
-    describe_point_cloud(pointCloud);
+    // read_point_cloud_sem(&pointCloud,"Data/point_cloud1.txt",&sem_3,&sem_1);
 
-    filter_point_cloud(&pointCloud);
+    // describe_point_cloud(pointCloud);
 
-    describe_point_cloud(pointCloud);
+    // filter_point_cloud_sem(&pointCloud,&sem_1,&sem_2);
 
-    filter_roads(&pointCloud,12);
+    // describe_point_cloud(pointCloud);
 
-    describe_point_cloud(pointCloud);
+    // filter_roads_sem(&pointCloud,12,&sem_2,&sem_3);
+
+    // describe_point_cloud(pointCloud);
+
+    sem_destroy(&sem_1); sem_destroy(&sem_2); sem_destroy(&sem_3);
 
     // }
 
