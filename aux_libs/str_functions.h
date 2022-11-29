@@ -55,8 +55,6 @@ double dtime_ms(const struct timespec *tim_1,const struct timespec *tim_2);
 
 void print_timespec(struct timespec t,char *prefix);
 
-void calc_func_ripple(struct timespec dtime_spec[N_FUNCTIONS][N_SAMPLES]);
-
 void display_thread_attr(pthread_t thread, char *prefix);
 
 double timespec_to_double_ms(struct timespec *time);

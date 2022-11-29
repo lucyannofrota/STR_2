@@ -20,7 +20,7 @@ t_point_cloud *pointCloud;
 
 static void *read_thread(void *arg){
 
-    arg = NULL;
+    arg += 0;
 
     printf("thread attr:\n"); display_thread_attr(pthread_self(), "\t"); printf("\n");
 
@@ -31,20 +31,17 @@ static void *read_thread(void *arg){
 
     while(cond_th[0]){
 
-        // printf("Th1: \n"); print_timespec(next_time,"\t");
-
+        #if __VERBOSE
         clock_gettime(CLOCK_REALTIME, &(currrent_time));
         
         printf("Th1: %f\n",dtime_ms(&currrent_time,&next_time)*1000);// print_timespec(currrent_time,"\t");
-        // print_timespec(currrent_time,"\t");
+        #endif
 
         add_timespec(&next_time,&period,&next_time);
 
         read_point_cloud_sem(&pointCloud, "Data/point_cloud1.txt",&sem_3,&sem_1);
-        // read_point_cloud(&pointCloud, "Data/point_cloud1.txt");
 
         clock_nanosleep(CLOCK_REALTIME, TIMER_ABSTIME, &next_time, NULL);
-        
         
     }
 
@@ -54,7 +51,7 @@ static void *read_thread(void *arg){
 
 static void *remove_outliers_thread(void *arg){
 
-    arg = NULL;
+    arg += 0;
 
     printf("thread attr:\n"); display_thread_attr(pthread_self(), "\t"); printf("\n");
 
@@ -66,8 +63,6 @@ static void *remove_outliers_thread(void *arg){
     while(cond_th[1]){
 
         add_timespec(&next_time,&period,&next_time);
-
-        // printf("Th2: \n"); print_timespec(next_time,"\t");
 
         filter_point_cloud_sem(&pointCloud,&sem_1,&sem_2);
 
@@ -81,7 +76,7 @@ static void *remove_outliers_thread(void *arg){
 
 static void *filter_roads_thread(void *arg){
 
-    arg = NULL;
+    arg += 0;
 
     printf("thread attr:\n"); display_thread_attr(pthread_self(), "\t"); printf("\n");
 
@@ -91,10 +86,6 @@ static void *filter_roads_thread(void *arg){
     clock_gettime(CLOCK_REALTIME, &(next_time));
 
     while(cond_th[2]){
-
-        clock_gettime(CLOCK_REALTIME, &(currrent_time));
-        
-        // printf("Th3: %f\n",dtime_ms(&currrent_time,&next_time)*1000);// print_timespec(currrent_time,"\t");
 
         add_timespec(&next_time,&period,&next_time);
 
@@ -129,7 +120,7 @@ int main(int argc, char *argv[]){
         printf("ArgV: %s\n",*argv);
     }
 
-    // signal(SIGTTIN, catch_sig_int);
+    signal(SIGTTIN, catch_sig_int);
     
     sem_init(&sem_1,0,0); sem_init(&sem_2,0,0); sem_init(&sem_3,0,1);
     if(&sem_1 == SEM_FAILED || &sem_2 == SEM_FAILED || &sem_3 == SEM_FAILED) perror("sem_init() error.");
@@ -151,18 +142,6 @@ int main(int argc, char *argv[]){
     pthread_join(thr1,NULL); pthread_join(thr2,NULL); pthread_join(thr3,NULL);
 
     pthread_attr_destroy(&attr);
-
-    // read_point_cloud_sem(&pointCloud,"Data/point_cloud1.txt",&sem_3,&sem_1);
-
-    // describe_point_cloud(pointCloud);
-
-    // filter_point_cloud_sem(&pointCloud,&sem_1,&sem_2);
-
-    // describe_point_cloud(pointCloud);
-
-    // filter_roads_sem(&pointCloud,12,&sem_2,&sem_3);
-
-    // describe_point_cloud(pointCloud);
 
     sem_destroy(&sem_1); sem_destroy(&sem_2); sem_destroy(&sem_3);
 

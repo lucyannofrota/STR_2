@@ -1,7 +1,5 @@
 #include "str_functions.h"
 
-// #define PI 3.14159265
-
 void read_point_cloud(t_point_cloud **ptr, char *file_name){
     (*ptr) = (t_point_cloud*) malloc(sizeof(t_point_cloud));
     (*ptr)->npoints = 0;
@@ -10,8 +8,7 @@ void read_point_cloud(t_point_cloud **ptr, char *file_name){
     (*ptr)->z = NULL;
     
     FILE* file = NULL;
-    if(file == NULL) file = fopen(file_name, "r"); // Abre o ficheiro na primeira vez que é chamada
-    else perror("Missing input file.");
+    if(file == NULL) handle_error_en(errno,"fopen()");
 
     #if __VERBOSE == 1
     printf("File name: %s\n",file_name);
@@ -333,37 +330,6 @@ void print_timespec(struct timespec t,char *prefix){
     printf("%s sec: %i\n%snsec: %ld\n",prefix,(int)t.tv_sec,prefix,t.tv_nsec);
 }
 
-void calc_func_ripple(struct timespec dtime_spec[N_FUNCTIONS][N_SAMPLES]){
-    int i,j;
-    struct timespec time1 = {0,0}, time2 = {0,0};
-
-    t_point_cloud *pointCloud1 = NULL;
-
-    for(j = 0; j < N_FUNCTIONS; j++){
-        for(i = 0; i < N_SAMPLES; i++){
-            if(j == 0){
-                clock_gettime(CLOCK_REALTIME, &time1);
-                read_point_cloud(&pointCloud1, "Data/point_cloud1.txt");
-                clock_gettime(CLOCK_REALTIME, &time2);
-                if(pointCloud1 != NULL && i != N_SAMPLES-1) free_t_point_cloud(pointCloud1);
-            }
-            if(j == 1){
-                clock_gettime(CLOCK_REALTIME, &time1);
-                filter_point_cloud(&pointCloud1);
-                clock_gettime(CLOCK_REALTIME, &time2);
-            }
-            if(j == 2){
-                clock_gettime(CLOCK_REALTIME, &time1);
-                filter_roads(&pointCloud1,12);
-                clock_gettime(CLOCK_REALTIME, &time2);
-            }
-            sub_timespec(&time2,&time1,&dtime_spec[j][i]);
-            clk_wait(5); // 5 ms
-        }
-    }
-    if(pointCloud1 != NULL) free_t_point_cloud(pointCloud1);
-}
-
 void display_thread_attr(pthread_t thread, char *prefix){
     // https://man7.org/linux/man-pages/man3/pthread_getattr_np.3.html
     int s, i;
@@ -424,8 +390,8 @@ double timespec_to_double_ms(struct timespec *time){
 }
 
 void print_table(struct timespec *tab,int M, int N, char *prefix){
-    double max_values[M];
-    double mean_values[M];
+    double *max_values = (double*) malloc(sizeof(double)*M);
+    double *mean_values = (double*) malloc(sizeof(double)*M);
 
 
     // Max values initialization
@@ -468,6 +434,8 @@ void print_table(struct timespec *tab,int M, int N, char *prefix){
     printf("|\n");
     printf("%sSum Max Times (%i functions) [ms]: %i\n",prefix,N_FUNCTIONS,sum_max);
     printf("\n\n\n");
+
+    free(max_values); free(mean_values);
 }
 
 void thread_configs(pthread_attr_t *attr,int setaffinity, int sched_type,int priority_mod){
@@ -516,18 +484,14 @@ void thread_configs(pthread_attr_t *attr,int setaffinity, int sched_type,int pri
 
 void read_point_cloud_sem(t_point_cloud **ptr, char *file_name, sem_t *sem_b, sem_t *sem_a){
     sem_wait(sem_b);
-    if(ptr == NULL){
-        perror("Allocation \"read_point_cloud\"");
-        exit(EXIT_FAILURE);
-    }
+    if(*ptr == NULL) handle_error_en(errno,"ptr == NULL"); 
     (*ptr)->npoints = 0;
     (*ptr)->x = NULL;
     (*ptr)->y = NULL;
     (*ptr)->z = NULL;
     
-    FILE* file = NULL;
-    if(file == NULL) file = fopen(file_name, "r"); // Abre o ficheiro na primeira vez que é chamada
-    else perror("Missing input file.");
+    FILE* file = fopen(file_name, "r");
+    if(file == NULL) handle_error_en(errno,"fopen()");
 
     #if __VERBOSE == 1
     printf("File name: %s\n",file_name);
