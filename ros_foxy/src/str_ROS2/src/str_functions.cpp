@@ -79,7 +79,7 @@ void describe_point_cloud(t_point_cloud *ptr){
 
 
 
-    printf("\n\nReport:");
+    printf("\n\nReport:\n");
     printf("\tCount: %i\n",ptr->npoints);
     printf("\t      [         x,         y,         z]\n");
     printf("\tMax:  [%10.6f,%10.6f,%10.6f]\n",max[0],max[1],max[2]);
@@ -532,9 +532,11 @@ void read_point_cloud_sem(t_point_cloud **ptr, char *file_name, sem_t *sem_b, se
 }
 
 void filter_point_cloud_sem(t_point_cloud **ptr, sem_t *sem_b, sem_t *sem_a){
+
     const int n_rules = 4;
     int i, count = 0;
     sem_wait(sem_b);
+    printf("Filt\n");
     int *valid_pts = (int*) malloc(sizeof(int)*(*ptr)->npoints);
 
     // looking for valid points
