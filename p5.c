@@ -16,11 +16,9 @@ t_point_cloud *pointCloud;
 
 #define THREAD_PERIOD 100
 
-// #define I_TIME_S 3
-
 static void *read_thread(void *arg){
 
-    arg += 0;
+    (void) arg;
 
     printf("thread attr:\n"); display_thread_attr(pthread_self(), "\t"); printf("\n");
 
@@ -31,11 +29,12 @@ static void *read_thread(void *arg){
 
     while(cond_th[0]){
 
-        #if __VERBOSE
+        // Ajustar o fluxo do codigo em relação ao clock_nanosleep
+        // Armazenar os tempos como parametro
+
         clock_gettime(CLOCK_REALTIME, &(currrent_time));
         
         printf("Th1: %f\n",dtime_ms(&currrent_time,&next_time)*1000);// print_timespec(currrent_time,"\t");
-        #endif
 
         add_timespec(&next_time,&period,&next_time);
 
@@ -51,22 +50,13 @@ static void *read_thread(void *arg){
 
 static void *remove_outliers_thread(void *arg){
 
-    arg += 0;
+    (void) arg;
 
     printf("thread attr:\n"); display_thread_attr(pthread_self(), "\t"); printf("\n");
 
-    const struct timespec period = {0,THREAD_PERIOD*1e6};
-    struct timespec next_time;
-
-    clock_gettime(CLOCK_REALTIME, &(next_time));
-
     while(cond_th[1]){
 
-        add_timespec(&next_time,&period,&next_time);
-
         filter_point_cloud_sem(&pointCloud,&sem_1,&sem_2);
-
-        clock_nanosleep(CLOCK_REALTIME, TIMER_ABSTIME, &next_time, NULL);
         
     }
 
@@ -76,22 +66,13 @@ static void *remove_outliers_thread(void *arg){
 
 static void *filter_roads_thread(void *arg){
 
-    arg += 0;
+    (void) arg;
 
     printf("thread attr:\n"); display_thread_attr(pthread_self(), "\t"); printf("\n");
 
-    const struct timespec period = {0,THREAD_PERIOD*1e6};
-    struct timespec next_time, currrent_time;
-
-    clock_gettime(CLOCK_REALTIME, &(next_time));
-
     while(cond_th[2]){
 
-        add_timespec(&next_time,&period,&next_time);
-
         filter_roads_sem(&pointCloud,12,&sem_2,&sem_3);
-
-        clock_nanosleep(CLOCK_REALTIME, TIMER_ABSTIME, &next_time, NULL);
         
     }
 
@@ -100,8 +81,7 @@ static void *filter_roads_thread(void *arg){
 }
 
 void catch_sig_int(int val){
-
-    val += 0;
+    (void) val;
     for(int i = 0; i < 3; i++){
         cond_th[i] = 0;
     }
@@ -116,9 +96,7 @@ void catch_sig_int(int val){
 }
 
 int main(int argc, char *argv[]){
-    if(argc > 1){
-        printf("ArgV: %s\n",*argv);
-    }
+    (void) argc; (void) argv;
 
     signal(SIGTTIN, catch_sig_int);
     
@@ -145,7 +123,6 @@ int main(int argc, char *argv[]){
 
     sem_destroy(&sem_1); sem_destroy(&sem_2); sem_destroy(&sem_3);
 
-    // }
-
     return 0;
+    
 }

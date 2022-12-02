@@ -13,7 +13,15 @@ int main(int argc, char *argv[]){
 
     describe_point_cloud(pointCloud1);
 
-    free_t_point_cloud(pointCloud1);
+    filter_point_cloud(&pointCloud1);
+
+    describe_point_cloud(pointCloud1);
+
+    filter_roads(&pointCloud1,12);
+
+    describe_point_cloud(pointCloud1);
+
+    if(pointCloud1 != NULL) free_t_point_cloud(pointCloud1);
 
     return 0;
 }

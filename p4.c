@@ -13,7 +13,7 @@ void calc_func_ripple(struct timespec dtime_spec[N_FUNCTIONS][N_SAMPLES]){
     int i,j;
     struct timespec time1 = {0,0}, time2 = {0,0};
 
-    t_point_cloud *pointCloud1 = NULL;
+    t_point_cloud *pointCloud1 = (t_point_cloud*) malloc(sizeof(t_point_cloud));
 
     for(j = 0; j < N_FUNCTIONS; j++){
         for(i = 0; i < N_SAMPLES; i++){
@@ -21,7 +21,6 @@ void calc_func_ripple(struct timespec dtime_spec[N_FUNCTIONS][N_SAMPLES]){
                 clock_gettime(CLOCK_REALTIME, &time1);
                 read_point_cloud(&pointCloud1, "Data/point_cloud1.txt");
                 clock_gettime(CLOCK_REALTIME, &time2);
-                if(pointCloud1 != NULL && i != N_SAMPLES-1) free_t_point_cloud(pointCloud1);
             }
             if(j == 1){
                 clock_gettime(CLOCK_REALTIME, &time1);
@@ -53,21 +52,7 @@ static void *thread_start(void *arg){
 }
 
 int main(int argc, char *argv[]){
-    if(argc > 1){
-        printf("ArgV: %s\n",*argv);
-    }
-
-    // t_point_cloud *pointCloud1 = NULL;
-
-    // read_point_cloud(&pointCloud1, "Data/point_cloud1.txt");
-
-    // describe_point_cloud(pointCloud1);
-
-    // filter_point_cloud(&pointCloud1);
-
-    // describe_point_cloud(pointCloud1);
-
-    // if(pointCloud1 != NULL) free_t_point_cloud(pointCloud1);
+    (void) argc; (void) argv;
 
 
 
@@ -75,20 +60,6 @@ int main(int argc, char *argv[]){
 
     printf("Process PID: %i\n",getpid());
 
-    // Verificando atributos iniciais do thread main
-
-    // int s;
-
-    // pthread_t main_thread = pthread_self();
-
-    // cpu_set_t cpu_set;
-
-
-    // Alterando atributos do thread main
-
-    // CPU_ZERO(&cpu_set);
-
-    // CPU_SET(0,&cpu_set);
 
     printf("##################\n");
     printf("##Thread configs##\n");
@@ -96,26 +67,14 @@ int main(int argc, char *argv[]){
 
     printf("main_thread attr Initial:\n"); display_thread_attr(pthread_self(), "\t"); printf("\n");
 
-    // s = pthread_setaffinity_np(main_thread,sizeof(cpu_set), &cpu_set);
-    // if (s != 0) handle_error_en(s, "pthread_setaffinity_np");
-
-    // pthread_attr_t attr;
-    
-    // thread_configs(&attr,1,SCHED_FIFO,0);
-
     pthread_t thr1;
 
     printf("main_thread attr Changed:\n"); display_thread_attr(pthread_self(), "\t"); printf("\n");
 
     struct timespec time_table[N_FUNCTIONS][N_SAMPLES];
 
-    calc_func_ripple(time_table);
-
-    // pthread_create(&thr1,&attr,thread_start, time_table);
     pthread_create(&thr1,NULL,thread_start, time_table);
 
-    // s = pthread_attr_destroy(&attr);
-    // if (s != 0) handle_error_en(s, "pthread_attr_destroy");
 
     // Aguardando o termino do thread
     pthread_join(thr1,NULL);
