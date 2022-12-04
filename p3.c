@@ -11,13 +11,19 @@ int main(int argc, char *argv[]){
 
     read_point_cloud(&pointCloud1, "Data/point_cloud1.txt");
 
+    printf("\n\nRaw Point Cloud\n");
+
     describe_point_cloud(pointCloud1);
 
     filter_point_cloud(&pointCloud1);
 
+    printf("\n\nFiltered Point Cloud\n");
+
     describe_point_cloud(pointCloud1);
 
     filter_roads(&pointCloud1,12);
+
+    printf("\n\nRoads Point Cloud\n");
 
     describe_point_cloud(pointCloud1);
 

@@ -16,6 +16,10 @@ t_point_cloud *pointCloud;
 
 #define THREAD_PERIOD 100
 
+#define ITERATIONS 500
+
+struct timespec times[ITERATIONS+1];
+
 static void *read_thread(void *arg){
 
     (void) arg;
@@ -23,26 +27,28 @@ static void *read_thread(void *arg){
     printf("thread attr:\n"); display_thread_attr(pthread_self(), "\t"); printf("\n");
 
     const struct timespec period = {0,THREAD_PERIOD*1e6};
-    struct timespec next_time,currrent_time;
+    struct timespec next_time;
 
-    clock_gettime(CLOCK_REALTIME, &(next_time));
+    clock_gettime(CLOCK_REALTIME, &(times[0]));
 
-    while(cond_th[0]){
+    int i = 0;
 
-        // Ajustar o fluxo do codigo em relação ao clock_nanosleep
-        // Armazenar os tempos como parametro
+    add_timespec(&next_time,&period,&(times[0]));
 
-        clock_gettime(CLOCK_REALTIME, &(currrent_time));
-        
-        printf("Th1: %f\n",dtime_ms(&currrent_time,&next_time)*1000);// print_timespec(currrent_time,"\t");
+    while(cond_th[0] && i < ITERATIONS+1){
 
-        add_timespec(&next_time,&period,&next_time);
+        clock_nanosleep(CLOCK_REALTIME, TIMER_ABSTIME, &next_time, NULL);
 
         read_point_cloud_sem(&pointCloud, "Data/point_cloud1.txt",&sem_3,&sem_1);
 
-        clock_nanosleep(CLOCK_REALTIME, TIMER_ABSTIME, &next_time, NULL);
-        
+        clock_gettime(CLOCK_REALTIME, &(times[i]));
+
+        add_timespec(&next_time,&period,&(next_time));
+    
+        i++;
     }
+
+    cond_th[0] = 0; cond_th[1] = 0; cond_th[2] = 0;
 
     return NULL;
 
@@ -122,6 +128,17 @@ int main(int argc, char *argv[]){
     pthread_attr_destroy(&attr);
 
     sem_destroy(&sem_1); sem_destroy(&sem_2); sem_destroy(&sem_3);
+
+    int i;
+    printf("Time table:\n");
+    double max_time = -DBL_MIN;
+    double d_time;
+    for(i = 0; i < ITERATIONS; i++){
+        d_time = dtime_ms(&(times[i+1]),&(times[i]));
+        printf("\t%2i | delta_t = %9.3f (ms)\n",i+1,d_time);
+        if(max_time < d_time) max_time = d_time;
+    }
+    printf("\tMax time: %9.3f (ms)\n",max_time);
 
     return 0;
     

@@ -6,7 +6,7 @@ DBGCFLAGS = -O2 -Wall -Wextra #-DDEBUG -g3 -O0
 
 AUX_OBJS_NAMES = aux_libs/str_functions #linked_list
 
-PROBLEMS_NAMES = main p1 p2 p3 p4 p5
+PROBLEMS_NAMES = p1 p2 p3 p4 p5
 
 define generate_object
 	@echo "\n|Generating $(2).o"

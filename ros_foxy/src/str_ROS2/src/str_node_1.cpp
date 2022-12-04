@@ -125,7 +125,7 @@ class pub_view : public rclcpp::Node{
     publisher_marker = this->create_publisher<visualization_msgs::msg::Marker>("Origin",10);
 
     // Initializing Subscription
-    subscription_velodyne = this->create_subscription<sensor_msgs::msg::PointCloud2>("velodyne_points",10,std::bind(&pub_view::subscriber_callback,this,_1));
+    subscription_velodyne = this->create_subscription<sensor_msgs::msg::PointCloud2>("velodyne_points",10,std::bind(&pub_view::PointCloud2_msg_to_t_point_cloud,this,_1));
     
     // Initializing Msgs
     msg_marker.header.frame_id = "velodyne";
@@ -195,18 +195,13 @@ class pub_view : public rclcpp::Node{
 
   pthread_t thr1, thr2, thr3;
 
-
-  void subscriber_callback(sensor_msgs::msg::PointCloud2::SharedPtr shr_msg){
-    this->PointCloud2_msgtot_point_cloud(shr_msg,&sem_4,&sem_1);
-  }
-
-  void PointCloud2_msgtot_point_cloud(sensor_msgs::msg::PointCloud2::SharedPtr &shr_msg,sem_t *sem_b,sem_t *sem_a){
+  void PointCloud2_msg_to_t_point_cloud(sensor_msgs::msg::PointCloud2::SharedPtr shr_msg){
     sensor_msgs::PointCloud2Iterator<float> iter_x(*(shr_msg),"x");
     sensor_msgs::PointCloud2Iterator<float> iter_y(*(shr_msg),"y");
     sensor_msgs::PointCloud2Iterator<float> iter_z(*(shr_msg),"z");
 
 
-    sem_wait(sem_b);
+    sem_wait(&sem_4);
     pointCloud->npoints = shr_msg.get()->width;
     free(pointCloud->x);
     pointCloud->x = (double*) malloc(sizeof(double)*pointCloud->npoints);
@@ -224,7 +219,7 @@ class pub_view : public rclcpp::Node{
       ++iter_x; ++iter_y; ++iter_z; i++;
     }
 
-    sem_post(sem_a);
+    sem_post(&sem_1);
   }
 
   void timer_callback()
@@ -234,9 +229,6 @@ class pub_view : public rclcpp::Node{
   }
 
 };
-
-
-
 
 int main(int argc, char ** argv)
 {

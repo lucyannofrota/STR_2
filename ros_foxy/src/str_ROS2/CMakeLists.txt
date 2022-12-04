@@ -49,13 +49,22 @@ install(
   RUNTIME DESTINATION bin
 )
 
-add_executable(str_node src/str_node.cpp)
-target_include_directories(str_node PUBLIC
+add_executable(str_node_1 src/str_node_1.cpp)
+target_include_directories(str_node_1 PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>)
-target_link_libraries(str_node str_functions)
+target_link_libraries(str_node_1 str_functions)
 
-install(TARGETS str_node
+install(TARGETS str_node_1
+  DESTINATION lib/${PROJECT_NAME})
+
+add_executable(str_node_2 src/str_node_2.cpp)
+target_include_directories(str_node_2 PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>)
+target_link_libraries(str_node_2 str_functions)
+
+install(TARGETS str_node_2
   DESTINATION lib/${PROJECT_NAME})
 
 if(BUILD_TESTING)

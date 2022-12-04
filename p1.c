@@ -11,6 +11,8 @@ int main(int argc, char *argv[]){
 
     read_point_cloud(&pointCloud1, "Data/point_cloud1.txt");
 
+    printf("\n\nRaw Point Cloud\n");
+
     describe_point_cloud(pointCloud1);
 
     free_t_point_cloud(pointCloud1);

@@ -77,7 +77,7 @@ void describe_point_cloud(t_point_cloud *ptr){
 
 
 
-    printf("\n\nReport:");
+    printf("\nReport:");
     printf("\tCount: %i\n",ptr->npoints);
     printf("\t      [         x,         y,         z]\n");
     printf("\tMax:  [%10.6f,%10.6f,%10.6f]\n",max[0],max[1],max[2]);
